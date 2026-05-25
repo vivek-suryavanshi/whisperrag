@@ -18,9 +18,12 @@ async def chat(request: ChatRequest):
     # Build the system prompt depending on whether a webpage is loaded
     if request.webpage_content:
         # Web RAG mode — AI must answer using only the webpage content
-        system_prompt = f"""You are a helpful assistant that answers questions based only on the webpage content provided below.
-If the answer is not found in the webpage content, say "I could not find that information on this page."
-Do not use any outside knowledge.
+        system_prompt = f"""You are a helpful assistant that answers questions based on the webpage content provided below.
+
+When the user says words like "extract", "webpage", "website", "content", "article", "page" or "this" — they are referring to the webpage content below. Treat those as requests to summarise or explain what you have read.
+
+If a specific fact is not in the content, say "I could not find that in the article."
+Do not invent facts not present in the content.
 
 Webpage content:
 {request.webpage_content}"""
