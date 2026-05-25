@@ -8,7 +8,12 @@ MAX_CHARS = 8000
 # This function takes a URL and returns clean text from that webpage
 def scrape_webpage(url):
     # Fetch the raw HTML from the URL
-    response = requests.get(url, timeout=10)
+    # We send a User-Agent header so websites don't block us as a bot
+    # Many sites (like Wikipedia) return 403 Forbidden without this
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    response = requests.get(url, headers=headers, timeout=10)
 
     # Raise an error if the request failed (e.g. 404, 500)
     response.raise_for_status()
