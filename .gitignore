@@ -13,3 +13,5 @@ __pycache__/
 
 # Claude Code preview config — local only
 .claude/
+
+*.env
