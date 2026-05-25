@@ -211,7 +211,7 @@
             background-color: #1D9E75;
             color: white;
             animation: wave 1s ease-in-out infinite;
-            cursor: not-allowed;
+            cursor: pointer;
         }
 
         @keyframes pulse {
@@ -302,7 +302,7 @@
             if (state === "recording") {
                 micButton.classList.add("recording");
                 micButton.textContent = "⏹";
-                micLabel.textContent = "Recording...";
+                micLabel.textContent = "Recording... Click to stop";
             }
             if (state === "thinking") {
                 micButton.classList.add("thinking");
@@ -312,22 +312,46 @@
             if (state === "speaking") {
                 micButton.classList.add("speaking");
                 micButton.textContent = "🔊";
-                micLabel.textContent = "Speaking...";
+                micLabel.textContent = "Speaking... Click to stop";
             }
         }
 
         // This function handles mic button clicks
         // If idle — start recording
         // If recording — stop recording
-        // If thinking or speaking — do nothing
+        // If speaking — stop audio and go back to idle
+        // If thinking — do nothing (API call in flight, can't interrupt)
         function handleMicClick() {
             if (micState === "idle") { startRecording(); }
             else if (micState === "recording") { stopRecording(); }
-            // Do nothing if thinking or speaking
+            else if (micState === "speaking") { stopSpeaking(); }
+            // Do nothing if thinking
+        }
+
+        // This function stops the audio playback when user clicks during speaking
+        function stopSpeaking() {
+            // Find the last audio player in the chat
+            const allAudioPlayers = document.querySelectorAll(".audio-player");
+            const lastAudioPlayer = allAudioPlayers[allAudioPlayers.length - 1];
+
+            // Pause it and reset to the beginning
+            if (lastAudioPlayer) {
+                lastAudioPlayer.pause();
+                lastAudioPlayer.currentTime = 0;
+            }
+
+            // Go back to idle so user can speak again
+            updateMicButton("idle");
         }
 
         // This function starts recording audio from the user's microphone
         async function startRecording() {
+            // Unlock audio autoplay by playing a silent audio immediately on the user gesture
+            // Browsers block autoplay unless audio is triggered close to a real user click
+            // Playing silence here registers audio permission for the whole session
+            const silentAudio = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA");
+            silentAudio.play().catch(function() {});
+
             // Ask the browser for permission to use the microphone
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
@@ -408,8 +432,7 @@
             conversationHistory.push({ role: "assistant", content: aiReply });
 
             // Step 3 — Send the AI reply to TTS to get audio
-            updateMicButton("speaking");
-
+            // Still in thinking state while we wait for TTS to respond
             const speakResponse = await fetch("/api/speak", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -430,6 +453,8 @@
             const lastAudioPlayer = allAudioPlayers[allAudioPlayers.length - 1];
 
             if (lastAudioPlayer) {
+                // Only switch to speaking state right before audio actually plays
+                updateMicButton("speaking");
                 lastAudioPlayer.play();
                 // When audio finishes, go back to idle state
                 lastAudioPlayer.onended = function() {
