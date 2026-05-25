@@ -1,0 +1,15 @@
+# Secret environment variables — never commit your API keys
+.env
+
+# Virtual environment — too large, not needed in version control
+.venv/
+
+# Python auto-generated cache files
+__pycache__/
+*.pyc
+
+# Mac system files — not part of the project
+.DS_Store
+
+# Claude Code preview config — local only
+.claude/
