@@ -6,7 +6,7 @@ from services.scraper import scrape_webpage
 router = APIRouter()
 
 # Maximum number of URLs allowed per session — abuse prevention
-MAX_URLS_PER_SESSION = 5
+MAX_URLS_PER_SESSION = 15
 
 # In-memory storage — stores the current webpage content and session info
 # This resets every time the server restarts (fine for MVP)
@@ -68,6 +68,9 @@ async def clear_webpage():
     # Wipe the stored content — fixes the V1 bug where clear didn't clear RAG
     session_data["webpage_content"] = ""
     session_data["page_title"] = ""
+
+    # NOTE: urls_loaded is intentionally NOT reset here
+    # Resetting it would let users bypass the limit by just clicking Clear
 
     # Return confirmation
     return {"message": "Webpage content cleared"}
