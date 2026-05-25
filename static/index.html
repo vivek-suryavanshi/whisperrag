@@ -114,42 +114,14 @@
         }
 
         .mode-banner {
-            padding: 14px 20px;
-            font-size: 15px;
-            font-weight: 700;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
             text-align: center;
-            letter-spacing: 0.3px;
         }
 
         .mode-banner.web-rag-mode { background-color: #d4edda; color: #1D9E75; }
         .mode-banner.general-mode { background-color: #dce9f9; color: #4a7bbf; }
-
-        /* Empty state shown in chat area before any messages */
-        .empty-state {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            color: #aaa;
-            text-align: center;
-            padding: 40px;
-        }
-
-        .empty-state-icon { font-size: 48px; }
-
-        .empty-state-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #999;
-        }
-
-        .empty-state-subtitle {
-            font-size: 14px;
-            color: #bbb;
-            line-height: 1.6;
-        }
 
         .chat-history {
             flex: 1;
@@ -279,18 +251,8 @@
 
     <!-- ── RIGHT MAIN AREA ── -->
     <div class="main-area">
-        <div id="mode-banner" class="mode-banner general-mode">💬 General mode</div>
-        <div id="chat-history" class="chat-history">
-            <!-- Empty state shown before any messages -->
-            <div id="empty-state" class="empty-state">
-                <div class="empty-state-icon">🎙️</div>
-                <div class="empty-state-title">Welcome to WhisperRAG</div>
-                <div class="empty-state-subtitle">
-                    Paste a webpage URL and ask questions by voice.<br>
-                    Or just click the mic and chat freely.
-                </div>
-            </div>
-        </div>
+        <div id="mode-banner" class="mode-banner general-mode">General mode</div>
+        <div id="chat-history" class="chat-history"></div>
         <div class="bottom-controls">
             <div id="transcription-text" class="transcription-text"></div>
             <button id="mic-button" class="mic-button idle" onclick="handleMicClick()">🎤</button>
@@ -534,12 +496,6 @@
                 messageBubble.appendChild(audioPlayer);
             }
 
-            // Hide the empty state once the first message appears
-            const emptyState = document.getElementById("empty-state");
-            if (emptyState) {
-                emptyState.style.display = "none";
-            }
-
             // Add the bubble to the chat history
             chatHistory.appendChild(messageBubble);
 
@@ -589,7 +545,7 @@
 
             // Switch the mode banner to Web RAG mode
             const modeBanner = document.getElementById("mode-banner");
-            modeBanner.textContent = "🌐 Web RAG mode";
+            modeBanner.textContent = "Web RAG mode";
             modeBanner.classList.remove("general-mode");
             modeBanner.classList.add("web-rag-mode");
 
@@ -607,17 +563,8 @@
             conversationHistory = [];
             webpageContent = "";
 
-            // Clear the chat history display and restore the empty state
-            document.getElementById("chat-history").innerHTML = `
-                <div id="empty-state" class="empty-state">
-                    <div class="empty-state-icon">🎙️</div>
-                    <div class="empty-state-title">Welcome to WhisperRAG</div>
-                    <div class="empty-state-subtitle">
-                        Paste a webpage URL and ask questions by voice.<br>
-                        Or just click the mic and chat freely.
-                    </div>
-                </div>
-            `;
+            // Clear the chat history display
+            document.getElementById("chat-history").innerHTML = "";
 
             // Clear the transcription text
             document.getElementById("transcription-text").textContent = "";
@@ -629,7 +576,7 @@
 
             // Reset the mode banner back to general mode
             const modeBanner = document.getElementById("mode-banner");
-            modeBanner.textContent = "💬 General mode";
+            modeBanner.textContent = "General mode";
             modeBanner.classList.remove("web-rag-mode");
             modeBanner.classList.add("general-mode");
 
