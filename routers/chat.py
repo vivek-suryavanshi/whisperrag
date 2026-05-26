@@ -15,21 +15,28 @@ class ChatRequest(BaseModel):
 # This endpoint receives a message and returns the AI reply
 @router.post("/chat")
 async def chat(request: ChatRequest):
-    # Build the system prompt depending on whether a webpage is loaded
-    if request.webpage_content:
-        # Web RAG mode — AI must answer using only the webpage content
-        system_prompt = f"""You are a helpful assistant that answers questions based on the webpage content provided below.
+    # Safety net — this should not happen because the frontend disables
+    # the mic until a URL is loaded, but we handle it gracefully just in case
+    if not request.webpage_content:
+        return {"reply": "Please load a webpage first, then ask me a question about it."}
 
-When the user says words like "extract", "webpage", "website", "content", "article", "page" or "this" — they are referring to the webpage content below. Treat those as requests to summarise or explain what you have read.
+    # WhisperRAG is a RAG-only app — the AI must stay focused on the webpage
+    # We explicitly tell it to refuse off-topic questions so users cannot
+    # use it as a general chatbot (e.g. ask for jokes, general knowledge etc.)
+    system_prompt = f"""You are WhisperRAG, a voice assistant that answers questions strictly based on the webpage content provided below.
 
-If a specific fact is not in the content, say "I could not find that in the article."
-Do not invent facts not present in the content.
+Your only job is to help the user understand and explore the content of the loaded webpage.
+
+Rules you must follow:
+- Only answer questions that are directly about the webpage content below
+- When the user says "this", "the page", "the article", "the website", "the content", "extract" — they mean the webpage below
+- If a specific fact is not in the content, say "I could not find that in the article"
+- If the user asks something completely unrelated to the webpage (jokes, general knowledge, maths, etc.), say "I can only answer questions about the loaded webpage. Try asking me something about it."
+- Do not invent or guess facts that are not present in the content
+- Keep answers clear and concise — this is a voice app, so avoid bullet points and markdown
 
 Webpage content:
 {request.webpage_content}"""
-    else:
-        # General mode — no webpage loaded, AI answers freely
-        system_prompt = "You are a helpful assistant. Answer the user's questions clearly and concisely."
 
     # Start building the messages list with the system prompt
     messages = []

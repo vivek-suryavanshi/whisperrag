@@ -352,6 +352,25 @@
         /* Hidden real audio element — still used for playback */
         .audio-player { display: none; }
 
+        /* ── EMPTY STATE ── */
+        /* Shown in the centre of the chat area before any URL is loaded */
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #B4B2A9;
+            text-align: center;
+            padding: 40px;
+            user-select: none;
+        }
+
+        .empty-icon { font-size: 36px; margin-bottom: 4px; }
+        .empty-title { font-size: 14px; font-weight: 500; color: #888780; }
+        .empty-body { font-size: 12px; line-height: 1.7; color: #B4B2A9; }
+
         /* ── VOICE AREA (bottom) ── */
         .voice-area {
             border-top: 0.5px solid #E8E6DF;
@@ -383,6 +402,15 @@
             justify-content: center;
             font-size: 26px;
             transition: all 0.2s ease;
+        }
+
+        /* Disabled state — before any URL is loaded */
+        .mic-button:disabled {
+            background: #F1EFE8;
+            border: 1.5px solid #E8E6DF;
+            color: #C4C2BA;
+            cursor: not-allowed;
+            opacity: 0.6;
         }
 
         /* ── MIC BUTTON STATES ── */
@@ -506,15 +534,22 @@
     <!-- ── RIGHT MAIN AREA ── -->
     <div class="main-area">
 
-        <div id="mode-banner" class="mode-banner general-mode">💬 General mode</div>
+        <div id="mode-banner" class="mode-banner general-mode">🔗 Load a webpage to begin</div>
 
-        <div id="chat-history" class="chat-history"></div>
+        <div id="chat-history" class="chat-history">
+            <!-- Empty state — shown until a URL is loaded -->
+            <div id="empty-state" class="empty-state">
+                <div class="empty-icon">🌐</div>
+                <div class="empty-title">No page loaded</div>
+                <div class="empty-body">Paste a URL in the sidebar and click Load page.<br>Then speak your question.</div>
+            </div>
+        </div>
 
         <!-- Voice controls -->
         <div class="voice-area">
             <div id="transcription-text" class="transcription-text">tap mic to speak</div>
-            <button id="mic-button" class="mic-button idle" onclick="handleMicClick()">🎤</button>
-            <div id="mic-label" class="mic-label label-idle">idle — click to speak</div>
+            <button id="mic-button" class="mic-button idle" onclick="handleMicClick()" disabled>🎤</button>
+            <div id="mic-label" class="mic-label label-idle">load a page to begin</div>
             <div class="footer-note">whisper · gpt-4o-mini · tts nova</div>
         </div>
 
@@ -924,6 +959,21 @@
         const contentData = await contentResponse.json();
         webpageContent = contentData.webpage_content;
 
+        // Auto-clear the previous conversation whenever a new URL is loaded
+        // This prevents context bleed between different pages
+        conversationHistory = [];
+        document.getElementById("chat-history").innerHTML = "";
+        document.getElementById("transcription-text").textContent = "tap mic to speak";
+
+        // Hide the empty state — we now have a page loaded
+        const emptyState = document.getElementById("empty-state");
+        if (emptyState) { emptyState.remove(); }
+
+        // Enable the mic button now that a page is loaded
+        const micButton = document.getElementById("mic-button");
+        micButton.disabled = false;
+        document.getElementById("mic-label").textContent = "idle — click to speak";
+
         // Show the active page card in the sidebar
         const pageIndicator = document.getElementById("page-indicator");
         const pageTitleText = document.getElementById("page-title-text");
@@ -950,8 +1000,20 @@
         conversationHistory = [];
         webpageContent = "";
 
-        // Clear the chat history display
-        document.getElementById("chat-history").innerHTML = "";
+        // Clear the chat history display and show the empty state again
+        const chatHistory = document.getElementById("chat-history");
+        chatHistory.innerHTML = "";
+
+        // Re-add the empty state message
+        const emptyState = document.createElement("div");
+        emptyState.id = "empty-state";
+        emptyState.classList.add("empty-state");
+        emptyState.innerHTML = `
+            <div class="empty-icon">🌐</div>
+            <div class="empty-title">No page loaded</div>
+            <div class="empty-body">Paste a URL in the sidebar and click Load page.<br>Then speak your question.</div>
+        `;
+        chatHistory.appendChild(emptyState);
 
         // Reset transcription text
         document.getElementById("transcription-text").textContent = "tap mic to speak";
@@ -961,14 +1023,19 @@
         pageIndicator.classList.remove("visible");
         document.getElementById("page-title-text").textContent = "";
 
-        // Reset the mode banner back to general mode
+        // Reset the mode banner back to the "load a page" prompt
         const modeBanner = document.getElementById("mode-banner");
-        modeBanner.textContent = "💬 General mode";
+        modeBanner.textContent = "🔗 Load a webpage to begin";
         modeBanner.classList.remove("web-rag-mode");
         modeBanner.classList.add("general-mode");
 
-        // Reset the URL input field and mic button
+        // Reset the URL input field
         document.getElementById("url-input").value = "";
+
+        // Disable the mic and reset it — user must load a page before speaking
+        const micButton = document.getElementById("mic-button");
+        micButton.disabled = true;
+        document.getElementById("mic-label").textContent = "load a page to begin";
         updateMicButton("idle");
     }
 </script>
