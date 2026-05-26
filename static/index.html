@@ -57,8 +57,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 15px;
+            font-weight: 800;
             color: white;
+            letter-spacing: -0.5px;
             flex-shrink: 0;
         }
 
@@ -251,8 +253,18 @@
             flex-shrink: 0;
         }
 
-        .avatar.ai-avatar { background: #EEEDFE; color: #534AB7; }
-        .avatar.user-avatar { background: #7F77DD; color: white; }
+        .avatar.ai-avatar {
+            background: #EEEDFE;
+            color: #534AB7;
+            font-size: 8.5px;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+        }
+
+        .avatar.user-avatar {
+            background: #7F77DD;
+            color: white;
+        }
 
         /* Message bubble — base styles shared by both sides */
         .message-bubble {
@@ -494,7 +506,7 @@
 
         <!-- Logo -->
         <div class="logo-row">
-            <div class="logo-icon">🎙️</div>
+            <div class="logo-icon">W</div>
             <div>
                 <span class="logo-text">WhisperRAG</span>
                 <span class="logo-badge">v2</span>
@@ -507,7 +519,13 @@
             <input type="text" id="url-input" class="url-input" placeholder="https://example.com" />
         </div>
 
-        <button id="load-button" class="load-button" onclick="loadWebpage()">⬇️ Load page</button>
+        <button id="load-button" class="load-button" onclick="loadWebpage()">
+            <!-- Inline SVG arrow — renders in white to match the flat button style -->
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 4v16M5 15l7 7 7-7"/>
+            </svg>
+            Load page
+        </button>
 
         <!-- Active page card — hidden until URL loads -->
         <div id="page-indicator" class="page-indicator">
@@ -889,10 +907,15 @@
 
         if (role === "user") {
             avatar.classList.add("user-avatar");
-            avatar.textContent = "👤";
+            // Person SVG — universally understood, no emoji rendering risk
+            avatar.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="8" r="4" fill="white"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="white" stroke-width="2" stroke-linecap="round" fill="none"/>
+            </svg>`;
         } else {
             avatar.classList.add("ai-avatar");
-            avatar.textContent = "🤖";
+            // "AI" text label — clear, descriptive, no emoji rendering risk
+            avatar.textContent = "AI";
         }
 
         // Create the message bubble
@@ -986,9 +1009,9 @@
         modeBanner.classList.remove("general-mode");
         modeBanner.classList.add("web-rag-mode");
 
-        // Re-enable the load button
+        // Re-enable the load button and restore the SVG arrow icon
         loadButton.disabled = false;
-        loadButton.textContent = "⬇️ Load page";
+        loadButton.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M5 15l7 7 7-7"/></svg> Load page`;
     }
 
     // This function clears the conversation and resets all state
