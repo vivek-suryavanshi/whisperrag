@@ -82,13 +82,13 @@
         }
 
         /* Section label — small uppercase heading */
+        /* margin-bottom removed — .section-label-row handles spacing now */
         .section-label {
             font-size: 11px;
             color: #888780;
             font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.06em;
-            margin-bottom: 6px;
         }
 
         .url-input {
@@ -158,35 +158,26 @@
             font-weight: 500;
         }
 
-        .page-title-text {
-            font-size: 12px;
-            color: #2C2C2A;
-            white-space: nowrap;
+        /* Truncated URL line — shows domain + path, e.g. gizmodo.com/article-slug */
+        .page-url-display {
+            margin-top: 4px;
             overflow: hidden;
+            white-space: nowrap;
             text-overflow: ellipsis;
         }
 
-        /* Full URL line — grey, truncated, with ↗ icon — only clickable element */
-        .page-url-text {
-            font-size: 10px;
-            color: #B4B2A9;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-top: 3px;
-            display: flex;
-            align-items: center;
-            gap: 3px;
-        }
-
-        .page-url-text a {
-            color: #B4B2A9;
+        /* The link inside — purple so it reads as clickable, no underline */
+        .page-url-display a {
+            font-size: 11px;
+            color: #7F77DD;
             text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 3px;
+            display: block;
             overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
         }
+
+        .page-url-display a:hover { color: #534AB7; }
 
         .page-url-text a:hover { color: #888780; }
 
@@ -196,11 +187,53 @@
             background: #E8E6DF;
         }
 
-        /* Small rules text */
-        .rules-text {
+        /* Section label row — label + info icon side by side */
+        .section-label-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 6px;
+        }
+
+        /* Info icon — the ⓘ circle */
+        .info-icon {
             font-size: 11px;
-            color: #B4B2A9;
-            line-height: 1.7;
+            color: #C4C2BA;
+            cursor: default;
+            line-height: 1;
+            user-select: none;
+        }
+
+        /* Wrapper needed so tooltip can be positioned relative to the icon */
+        .info-icon-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Tooltip — hidden by default, shown on hover */
+        /* Positioned to the right of the icon so it doesn't overlap the input below */
+        .info-tooltip {
+            display: none;
+            position: absolute;
+            left: calc(100% + 7px);
+            top: 50%;
+            transform: translateY(-50%);
+            background: #2C2C2A;
+            color: #F5F3EE;
+            font-size: 11px;
+            line-height: 1;
+            padding: 6px 9px;
+            border-radius: 6px;
+            white-space: nowrap;
+            z-index: 100;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        /* Show tooltip when hovering the icon wrapper */
+        .info-icon-wrap:hover .info-tooltip {
+            display: block;
         }
 
         .spacer { flex: 1; }
@@ -593,7 +626,14 @@
 
         <!-- URL section -->
         <div>
-            <div class="section-label">Webpage</div>
+            <!-- Label row — "WEBPAGE" label + ⓘ info icon with tooltip -->
+            <div class="section-label-row">
+                <span class="section-label">Webpage</span>
+                <span class="info-icon-wrap">
+                    <span class="info-icon">ⓘ</span>
+                    <span class="info-tooltip">best for articles, blogs &amp; news</span>
+                </span>
+            </div>
             <input type="text" id="url-input" class="url-input" placeholder="https://example.com" />
         </div>
 
@@ -607,20 +647,13 @@
 
         <!-- Active page card — hidden until URL loads -->
         <div id="page-indicator" class="page-indicator">
+            <!-- Status row — green dot + "page loaded" label -->
             <div class="page-indicator-top">
                 <div class="page-dot"></div>
                 <span class="page-loaded-label">page loaded</span>
             </div>
-            <div id="page-title-text" class="page-title-text"></div>
-            <div id="page-url-text" class="page-url-text"></div>
-        </div>
-
-        <div class="divider"></div>
-
-        <!-- Usage rules -->
-        <div class="rules-text">
-            articles · blogs · news work best<br>
-            max 15 URLs · pages capped at 8k chars
+            <!-- Truncated URL — domain + path, clickable, truncated by CSS -->
+            <div id="page-url-display" class="page-url-display"></div>
         </div>
 
         <div class="spacer"></div>
@@ -1037,13 +1070,36 @@
     // This function loads a webpage from the URL input and stores its content
     async function loadWebpage() {
         // Get the URL from the input field
+        // Must be "let" not "const" because we may reassign it when prepending https://
         const urlInput = document.getElementById("url-input");
-        const url = urlInput.value.trim();
+        let url = urlInput.value.trim();
 
         // Do nothing if the input is empty
         if (!url) { return; }
 
-        // Disable the load button while loading
+        // Auto-prepend https:// if the user typed a bare domain like "gizmodo.com"
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            url = "https://" + url;
+            urlInput.value = url;
+        }
+
+        // Basic URL sanity check — a real domain always has at least one dot
+        // e.g. "gizmodo.com" has a dot, "vxfvdfv" does not
+        // We catch this here so we don't waste a server round-trip on gibberish
+        let parsedUrl;
+        try {
+            parsedUrl = new URL(url);
+        } catch (parseError) {
+            alert("Please enter a valid URL (e.g. https://example.com)");
+            return;
+        }
+
+        if (!parsedUrl.hostname.includes(".")) {
+            alert("Please enter a valid URL (e.g. https://example.com)");
+            return;
+        }
+
+        // Disable the load button while loading to prevent double-clicks
         const loadButton = document.getElementById("load-button");
         loadButton.disabled = true;
         loadButton.textContent = "Loading...";
@@ -1056,11 +1112,22 @@
         });
         const data = await response.json();
 
-        // If the request failed, show an alert and re-enable the button
+        // If the request failed, show the error and reset all app state
         if (!response.ok) {
-            alert(`Error: ${data.detail}`);
+            // Show the friendly error message from the backend
+            alert(data.detail || "Something went wrong. Please try again.");
+
+            // Clear everything — failed load means nothing is loaded anymore
+            // This hides the page card, banner, disables the mic, and shows the empty state
+            await clearConversation();
+
+            // Put the bad URL back in the input so the user can see and fix it
+            // (clearConversation wipes the input, so we restore it here)
+            urlInput.value = url;
+
+            // Restore the Load button with its SVG arrow
             loadButton.disabled = false;
-            loadButton.textContent = "⬇️ Load page";
+            loadButton.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M5 15l7 7 7-7"/></svg> Load page`;
             return;
         }
 
@@ -1095,26 +1162,25 @@
         document.getElementById("transcription-text").textContent = "tap mic to speak";
 
         // Show the active page card in the sidebar
-        // Title line — readable name of the page, clickable
-        // URL line — full URL below in smaller grey text, also clickable
         const pageIndicator = document.getElementById("page-indicator");
-        const pageTitleText = document.getElementById("page-title-text");
-        const pageUrlText = document.getElementById("page-url-text");
-        // Title — plain text, no link (URL line handles navigation)
-        pageTitleText.textContent = data.page_title;
-        // URL line — clickable with a small external link icon
-        pageUrlText.innerHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer">
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${url}</span>
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" flex-shrink="0" style="flex-shrink:0">
-                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-        </a>`;
+        const pageUrlDisplay = document.getElementById("page-url-display");
+
+        // Strip the protocol so the URL reads cleanly: "gizmodo.com/article-slug"
+        // Also strip "www." — "www.bbc.co.uk/news" → "bbc.co.uk/news"
+        const displayUrl = url.replace("https://", "").replace("http://", "").replace("www.", "");
+
+        // Set the URL display — CSS handles the truncation with ellipsis
+        pageUrlDisplay.innerHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer">${displayUrl}</a>`;
         pageIndicator.classList.add("visible");
 
-        // Show the banner and switch to Web RAG mode
+        // Extract just the domain for the banner
+        // e.g. "https://gizmodo.com/some-article" → "gizmodo.com"
+        const domainName = new URL(url).hostname.replace("www.", "");
+
+        // Banner — domain only, short and assertive
         const modeBanner = document.getElementById("mode-banner");
         modeBanner.style.display = "flex";
-        modeBanner.textContent = "✓ answering from — " + data.page_title;
+        modeBanner.textContent = `✓ answering from — ${domainName}`;
         modeBanner.classList.remove("general-mode");
         modeBanner.classList.add("web-rag-mode");
 
@@ -1152,11 +1218,10 @@
         // Clear transcription text — mic is disabled again so no hint needed
         document.getElementById("transcription-text").textContent = "";
 
-        // Hide the page indicator in the sidebar and clear both lines
+        // Hide the page indicator in the sidebar and clear the URL display
         const pageIndicator = document.getElementById("page-indicator");
         pageIndicator.classList.remove("visible");
-        document.getElementById("page-title-text").textContent = "";
-        document.getElementById("page-url-text").textContent = "";
+        document.getElementById("page-url-display").innerHTML = "";
 
         // Hide the banner — empty state messaging takes over again
         const modeBanner = document.getElementById("mode-banner");

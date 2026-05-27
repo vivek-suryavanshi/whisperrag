@@ -16,7 +16,7 @@ async def speak(request: SpeakRequest):
     # Send the text to OpenAI TTS to convert it into speech
     tts_response = openai_client.audio.speech.create(
         model="tts-1",        # the TTS model
-        voice="nova",         # Nova is a clear, natural sounding voice
+        voice="nova",         # Nova is a warm, natural sounding voice
         input=request.text    # the text we want spoken out loud
     )
 

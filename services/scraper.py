@@ -13,7 +13,8 @@ def scrape_webpage(url):
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
-    response = requests.get(url, headers=headers, timeout=10)
+    # timeout=6 — fail fast if the server doesn't respond within 6 seconds
+    response = requests.get(url, headers=headers, timeout=6)
 
     # Raise an error if the request failed (e.g. 404, 500)
     response.raise_for_status()
@@ -43,4 +44,20 @@ def scrape_webpage(url):
     # Trim to the maximum character limit to control token usage
     trimmed_text = full_text[:MAX_CHARS]
 
-    return trimmed_text
+    # Extract the page title from the HTML <title> tag
+    # BeautifulSoup already parsed the HTML above, so this is free
+    page_title = ""
+    if soup.title and soup.title.string:
+        # .string gives us the raw title text — strip trims any surrounding whitespace
+        page_title = soup.title.string.strip()
+
+    # If the page has no <title> tag, fall back to the domain name from the URL
+    if not page_title:
+        url_without_protocol = url.replace("https://", "").replace("http://", "")
+        page_title = url_without_protocol.split("/")[0]
+
+    # Return both the scraped text and the real page title together
+    return {
+        "text": trimmed_text,
+        "title": page_title
+    }
