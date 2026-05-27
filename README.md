@@ -1,4 +1,4 @@
-# WhisperRAG 🎙️
+# WhisperRAG
 
 A voice RAG chatbot. Paste a webpage URL, ask a question by voice, get a spoken answer grounded in that page.
 
