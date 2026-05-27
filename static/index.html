@@ -160,11 +160,35 @@
 
         .page-title-text {
             font-size: 12px;
-            color: #185FA5;
+            color: #2C2C2A;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
+        /* Full URL line — grey, truncated, with ↗ icon — only clickable element */
+        .page-url-text {
+            font-size: 10px;
+            color: #B4B2A9;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .page-url-text a {
+            color: #B4B2A9;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            overflow: hidden;
+        }
+
+        .page-url-text a:hover { color: #888780; }
 
         /* Divider line */
         .divider {
@@ -207,10 +231,10 @@
             overflow: hidden;
         }
 
-        /* Mode banner — thin strip at top */
+        /* Mode banner — strip at top, visible only when page is loaded */
         .mode-banner {
-            padding: 9px 20px;
-            font-size: 12px;
+            padding: 11px 20px;
+            font-size: 13px;
             font-weight: 500;
             display: flex;
             align-items: center;
@@ -372,16 +396,70 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            color: #B4B2A9;
             text-align: center;
             padding: 40px;
             user-select: none;
+            gap: 0;
         }
 
-        .empty-icon { font-size: 36px; margin-bottom: 4px; }
-        .empty-title { font-size: 14px; font-weight: 500; color: #888780; }
-        .empty-body { font-size: 12px; line-height: 1.7; color: #B4B2A9; }
+        /* Large W logo mark */
+        .empty-logo-mark {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #7F77DD, #9F99E8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 14px;
+        }
+
+        /* App name */
+        .empty-app-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1A1A18;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+
+        /* What the app does */
+        .empty-tagline {
+            font-size: 13px;
+            color: #888780;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        /* Thin divider between branding and steps */
+        .empty-divider {
+            width: 32px;
+            height: 1px;
+            background: #E8E6DF;
+            margin-bottom: 20px;
+        }
+
+        /* Subtle hint shown after a URL loads, before first message */
+        .page-ready-hint {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #C4C2BA;
+            font-style: italic;
+            user-select: none;
+        }
+
+        /* Simple instruction line */
+        .empty-instruction {
+            font-size: 12px;
+            color: #B4B2A9;
+            line-height: 1.7;
+        }
 
         /* ── VOICE AREA (bottom) ── */
         .voice-area {
@@ -534,13 +612,14 @@
                 <span class="page-loaded-label">page loaded</span>
             </div>
             <div id="page-title-text" class="page-title-text"></div>
+            <div id="page-url-text" class="page-url-text"></div>
         </div>
 
         <div class="divider"></div>
 
         <!-- Usage rules -->
         <div class="rules-text">
-            no PDFs · no file hosting<br>
+            articles · blogs · news work best<br>
             max 15 URLs · pages capped at 8k chars
         </div>
 
@@ -552,20 +631,24 @@
     <!-- ── RIGHT MAIN AREA ── -->
     <div class="main-area">
 
-        <div id="mode-banner" class="mode-banner general-mode">🔗 Load a webpage to begin</div>
+        <!-- Banner is hidden until a URL is loaded — empty state handles messaging before that -->
+        <div id="mode-banner" class="mode-banner web-rag-mode" style="display: none;"></div>
 
         <div id="chat-history" class="chat-history">
             <!-- Empty state — shown until a URL is loaded -->
             <div id="empty-state" class="empty-state">
-                <div class="empty-icon">🌐</div>
-                <div class="empty-title">No page loaded</div>
-                <div class="empty-body">Paste a URL in the sidebar and click Load page.<br>Then speak your question.</div>
+                <div class="empty-logo-mark">W</div>
+                <div class="empty-app-name">WhisperRAG</div>
+                <div class="empty-tagline">Ask questions about any webpage,<br>answered out loud by AI.</div>
+                <div class="empty-divider"></div>
+                <div class="empty-instruction">Paste a URL in the sidebar, hit Load page,<br>then speak your question.</div>
             </div>
         </div>
 
         <!-- Voice controls -->
         <div class="voice-area">
-            <div id="transcription-text" class="transcription-text">tap mic to speak</div>
+            <!-- Transcription text is empty until a page is loaded — avoids confusing mobile users -->
+            <div id="transcription-text" class="transcription-text"></div>
             <button id="mic-button" class="mic-button idle" onclick="handleMicClick()" disabled>🎤</button>
             <div id="mic-label" class="mic-label label-idle">load a page to begin</div>
             <div class="footer-note">whisper · gpt-4o-mini · tts nova</div>
@@ -893,6 +976,10 @@
         // Get the chat history container
         const chatHistory = document.getElementById("chat-history");
 
+        // Remove the "Page ready" hint as soon as the first real message appears
+        const readyHint = document.getElementById("page-ready-hint");
+        if (readyHint) { readyHint.remove(); }
+
         // Create the outer row div — holds avatar + bubble side by side
         const msgRow = document.createElement("div");
         msgRow.classList.add("msg-row");
@@ -985,26 +1072,48 @@
         // Auto-clear the previous conversation whenever a new URL is loaded
         // This prevents context bleed between different pages
         conversationHistory = [];
-        document.getElementById("chat-history").innerHTML = "";
+        const chatHistory = document.getElementById("chat-history");
+        chatHistory.innerHTML = "";
         document.getElementById("transcription-text").textContent = "tap mic to speak";
 
         // Hide the empty state — we now have a page loaded
         const emptyState = document.getElementById("empty-state");
         if (emptyState) { emptyState.remove(); }
 
+        // Show a subtle hint so the chat area isn't a blank void after loading
+        const readyHint = document.createElement("div");
+        readyHint.id = "page-ready-hint";
+        readyHint.classList.add("page-ready-hint");
+        readyHint.textContent = "Page ready — speak your first question";
+        chatHistory.appendChild(readyHint);
+
         // Enable the mic button now that a page is loaded
         const micButton = document.getElementById("mic-button");
         micButton.disabled = false;
         document.getElementById("mic-label").textContent = "idle — click to speak";
+        // Now that mic is active, show the tap hint
+        document.getElementById("transcription-text").textContent = "tap mic to speak";
 
         // Show the active page card in the sidebar
+        // Title line — readable name of the page, clickable
+        // URL line — full URL below in smaller grey text, also clickable
         const pageIndicator = document.getElementById("page-indicator");
         const pageTitleText = document.getElementById("page-title-text");
+        const pageUrlText = document.getElementById("page-url-text");
+        // Title — plain text, no link (URL line handles navigation)
         pageTitleText.textContent = data.page_title;
+        // URL line — clickable with a small external link icon
+        pageUrlText.innerHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer">
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${url}</span>
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" flex-shrink="0" style="flex-shrink:0">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+        </a>`;
         pageIndicator.classList.add("visible");
 
-        // Switch the mode banner to Web RAG mode
+        // Show the banner and switch to Web RAG mode
         const modeBanner = document.getElementById("mode-banner");
+        modeBanner.style.display = "flex";
         modeBanner.textContent = "✓ answering from — " + data.page_title;
         modeBanner.classList.remove("general-mode");
         modeBanner.classList.add("web-rag-mode");
@@ -1032,34 +1141,45 @@
         emptyState.id = "empty-state";
         emptyState.classList.add("empty-state");
         emptyState.innerHTML = `
-            <div class="empty-icon">🌐</div>
-            <div class="empty-title">No page loaded</div>
-            <div class="empty-body">Paste a URL in the sidebar and click Load page.<br>Then speak your question.</div>
+            <div class="empty-logo-mark">W</div>
+            <div class="empty-app-name">WhisperRAG</div>
+            <div class="empty-tagline">Ask questions about any webpage,<br>answered out loud by AI.</div>
+            <div class="empty-divider"></div>
+            <div class="empty-instruction">Paste a URL in the sidebar, hit Load page,<br>then speak your question.</div>
         `;
         chatHistory.appendChild(emptyState);
 
-        // Reset transcription text
-        document.getElementById("transcription-text").textContent = "tap mic to speak";
+        // Clear transcription text — mic is disabled again so no hint needed
+        document.getElementById("transcription-text").textContent = "";
 
-        // Hide the page indicator in the sidebar
+        // Hide the page indicator in the sidebar and clear both lines
         const pageIndicator = document.getElementById("page-indicator");
         pageIndicator.classList.remove("visible");
         document.getElementById("page-title-text").textContent = "";
+        document.getElementById("page-url-text").textContent = "";
 
-        // Reset the mode banner back to the "load a page" prompt
+        // Hide the banner — empty state messaging takes over again
         const modeBanner = document.getElementById("mode-banner");
-        modeBanner.textContent = "🔗 Load a webpage to begin";
+        modeBanner.style.display = "none";
         modeBanner.classList.remove("web-rag-mode");
         modeBanner.classList.add("general-mode");
 
         // Reset the URL input field
         document.getElementById("url-input").value = "";
 
-        // Disable the mic and reset it — user must load a page before speaking
+        // Disable the mic — user must load a page before speaking
+        // We reset the button class manually here instead of calling updateMicButton()
+        // because updateMicButton("idle") would overwrite the label to "idle — click to speak"
         const micButton = document.getElementById("mic-button");
         micButton.disabled = true;
-        document.getElementById("mic-label").textContent = "load a page to begin";
-        updateMicButton("idle");
+        micButton.classList.remove("recording", "thinking", "speaking");
+        micButton.classList.add("idle");
+        micButton.textContent = "🎤";
+        micState = "idle";
+        const micLabel = document.getElementById("mic-label");
+        micLabel.classList.remove("label-recording", "label-thinking", "label-speaking");
+        micLabel.classList.add("label-idle");
+        micLabel.textContent = "load a page to begin";
     }
 </script>
 
