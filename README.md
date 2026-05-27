@@ -4,7 +4,7 @@ A voice RAG chatbot. Paste a webpage URL, ask a question by voice, get a spoken 
 
 ## What it does
 - Paste any webpage URL and click Load page
-- Speak your question using the mic
+- Speak your question
 - AI reads the page and answers out loud
 - Answers are strictly grounded in the loaded page — no hallucination, no general chatbot
 
@@ -60,7 +60,7 @@ http://localhost:8000
 
 ## How to use
 1. Paste a webpage URL in the sidebar and click **Load page**
-2. Click the mic button and speak your question
+2. Click the mic button, speak your question
 3. The AI answers based on that page and speaks the reply out loud
 4. Ask follow-up questions — conversation history is kept
 5. Click **Clear conversation** to reset and load a new page
@@ -80,6 +80,3 @@ http://localhost:8000
 - Max 15 URLs per session
 - Max 8000 characters scraped per page
 - Last 10 messages kept in conversation history
-
-## V1
-The original Streamlit version: https://whisperrag.streamlit.app
