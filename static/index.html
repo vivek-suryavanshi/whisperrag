@@ -606,6 +606,44 @@
             0%, 100% { transform: scaleY(0.45); }
             50%       { transform: scaleY(1.2); }
         }
+
+        /* ── MOBILE RESPONSIVE ── */
+        @media (max-width: 640px) {
+            /* Stack sidebar above main area instead of side by side */
+            .app {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+                height: 100vh;
+                height: 100dvh; /* dynamic viewport height — avoids iOS address bar overlap */
+            }
+
+            /* Sidebar becomes a compact strip across the top */
+            .sidebar {
+                border-right: none;
+                border-bottom: 0.5px solid #E8E6DF;
+                padding: 12px 14px;
+                gap: 8px;
+            }
+
+            /* Remove extra margin below logo */
+            .logo-row { margin-bottom: 0; }
+
+            /* Hide elements we don't need in the compact strip */
+            .section-label-row,
+            .divider,
+            .spacer { display: none; }
+
+            /* Main area must fill the remaining height exactly */
+            .main-area { min-height: 0; overflow: hidden; }
+
+            /* Tighter padding on mobile */
+            .chat-history { padding: 14px; }
+            .voice-area   { padding: 14px 16px; }
+
+            /* Chat bubbles can go wider on small screens */
+            .user-message { max-width: 85%; }
+            .ai-message   { max-width: 96%; }
+        }
     </style>
 </head>
 <body>
