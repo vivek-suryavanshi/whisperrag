@@ -15,8 +15,8 @@ A voice RAG chatbot. Paste a webpage URL, ask a question by voice, get a spoken 
 - AI replies: OpenAI GPT-4o-mini
 - Text to Speech: OpenAI TTS Nova
 - Scraping: requests + BeautifulSoup4
-
-One API key needed — OpenAI only.
+- Database: Supabase (Postgres) — session and message logging
+- LLM Observability: Langfuse — cost, latency, and trace tracking
 
 ## Setup
 
@@ -41,12 +41,14 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 5. Add your API key
+### 5. Add your API keys
 ```
 cp .env.example .env
 ```
-Open `.env` and replace the placeholder with your real OpenAI API key.
-Get your key at: https://platform.openai.com/api-keys
+Open `.env` and fill in your keys:
+- **OpenAI** — https://platform.openai.com/api-keys
+- **Supabase** — your project URL + service key from supabase.com
+- **Langfuse** — public + secret key from us.cloud.langfuse.com
 
 ### 6. Run the server
 ```
