@@ -645,6 +645,54 @@
             /* Chat bubbles can go wider on small screens */
             .user-message { max-width: 85%; }
             .ai-message   { max-width: 96%; }
+
+            /* ── COLLAPSED STATE — after URL loaded on mobile ── */
+            /* Sidebar shrinks to a single strip: domain + clear button */
+            .sidebar.collapsed {
+                flex-direction: row;
+                align-items: center;
+                padding: 10px 14px;
+                gap: 8px;
+            }
+
+            /* Hide everything except page indicator and clear button */
+            .sidebar.collapsed .logo-row,
+            .sidebar.collapsed .url-section,
+            .sidebar.collapsed .load-button,
+            .sidebar.collapsed .divider,
+            .sidebar.collapsed .spacer {
+                display: none;
+            }
+
+            /* Page indicator becomes a flex row — no card styling */
+            .sidebar.collapsed .page-indicator {
+                display: flex !important;
+                flex-direction: row;
+                align-items: center;
+                gap: 8px;
+                flex: 1;
+                min-width: 0;
+                border: none;
+                background: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .sidebar.collapsed .page-indicator-top { margin-bottom: 0; flex-shrink: 0; }
+            .sidebar.collapsed .page-url-display   { margin-top: 0; flex: 1; min-width: 0; }
+
+            /* Clear button sits inline at the end */
+            .sidebar.collapsed .clear-button {
+                width: auto;
+                flex-shrink: 0;
+                padding: 6px 10px;
+                font-size: 11px;
+            }
+
+            /* Banner is redundant on mobile — domain already shown in strip */
+            .sidebar.collapsed ~ .main-area .mode-banner {
+                display: none !important;
+            }
         }
     </style>
 </head>
@@ -664,7 +712,7 @@
         </div>
 
         <!-- URL section -->
-        <div>
+        <div class="url-section">
             <!-- Label row — "WEBPAGE" label + ⓘ info icon with tooltip -->
             <div class="section-label-row">
                 <span class="section-label">Webpage</span>
@@ -1212,6 +1260,12 @@
         pageUrlDisplay.innerHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer">${displayUrl}</a>`;
         pageIndicator.classList.add("visible");
 
+        // On mobile — collapse the sidebar to a compact single-line strip
+        // This gives maximum space to the chat area after a URL is loaded
+        if (window.innerWidth <= 640) {
+            document.querySelector(".sidebar").classList.add("collapsed");
+        }
+
         // Extract just the domain for the banner
         // e.g. "https://gizmodo.com/some-article" → "gizmodo.com"
         const domainName = new URL(url).hostname.replace("www.", "");
@@ -1256,6 +1310,11 @@
 
         // Clear transcription text — mic is disabled again so no hint needed
         document.getElementById("transcription-text").textContent = "";
+
+        // On mobile — expand the sidebar back so user can load a new URL
+        if (window.innerWidth <= 640) {
+            document.querySelector(".sidebar").classList.remove("collapsed");
+        }
 
         // Hide the page indicator in the sidebar and clear the URL display
         const pageIndicator = document.getElementById("page-indicator");
