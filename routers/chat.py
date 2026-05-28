@@ -1,7 +1,10 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import List
+import time
 from services.openai_client import openai_client
+from services.database import log_message
+from routers.scrape import session_data
 
 # Create a router for chat routes
 router = APIRouter()
@@ -55,14 +58,35 @@ Webpage content:
         recent_messages = messages[1:][-10:]
         messages = [messages[0]] + recent_messages
 
+    # Record the start time so we can measure GPT latency
+    gpt_start = time.time()
+
     # Send everything to GPT-4o-mini and get a response
     response = openai_client.chat.completions.create(
         model="gpt-4o-mini",
         messages=messages
     )
 
+    # Calculate how long the GPT call took in milliseconds
+    gpt_latency_ms = int((time.time() - gpt_start) * 1000)
+
     # Extract the AI's reply text from the response
     ai_reply = response.choices[0].message.content
+
+    # Log this message to Supabase — silently, doesn't affect the user
+    # total_latency_ms is the same as gpt_latency_ms for now
+    # (we can add Whisper + TTS latency later)
+    try:
+        log_message(
+            session_id=session_data["session_id"],
+            question=request.user_message,
+            answer=ai_reply,
+            gpt_latency_ms=gpt_latency_ms,
+            total_latency_ms=gpt_latency_ms
+        )
+    except Exception as db_error:
+        # Log the error but don't break the app — DB logging is non-critical
+        print(f"Supabase logging error: {str(db_error)}")
 
     # Return the reply to the frontend
     return {"reply": ai_reply}

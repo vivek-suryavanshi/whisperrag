@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import requests
 from services.scraper import scrape_webpage
+from services.database import create_session
 
 # Create a router for scrape routes
 router = APIRouter()
@@ -14,7 +15,8 @@ MAX_URLS_PER_SESSION = 15
 session_data = {
     "webpage_content": "",   # the scraped text from the current URL
     "page_title": "",        # the title of the loaded page
-    "urls_loaded": 0         # how many URLs have been loaded this session
+    "urls_loaded": 0,        # how many URLs have been loaded this session
+    "session_id": None       # the Supabase session ID for the current URL
 }
 
 # This defines the shape of data we expect from the frontend
@@ -72,6 +74,24 @@ async def load_webpage(request: ScrapeRequest):
     # Increment the URL counter for this session
     session_data["urls_loaded"] = session_data["urls_loaded"] + 1
 
+    # Extract just the domain for logging — e.g. "apple.com"
+    domain = request.url.replace("https://", "").replace("http://", "").replace("www.", "").split("/")[0]
+
+    # Log this session to Supabase — runs silently, doesn't affect the user
+    # If it fails we catch the error so the app still works
+    try:
+        session_id = create_session(
+            url=request.url,
+            domain=domain,
+            page_title=scrape_result["title"],
+            scraped_chars=len(scrape_result["text"])
+        )
+        # Store session ID in memory so chat router can link messages to it
+        session_data["session_id"] = session_id
+    except Exception as db_error:
+        # Log the error but don't break the app — DB logging is non-critical
+        print(f"Supabase logging error: {str(db_error)}")
+
     # Return confirmation and the real title to the frontend
     return {
         "message": "Webpage loaded successfully",
@@ -95,6 +115,7 @@ async def clear_webpage():
     # Wipe the stored content — fixes the V1 bug where clear didn't clear RAG
     session_data["webpage_content"] = ""
     session_data["page_title"] = ""
+    session_data["session_id"] = None
 
     # NOTE: urls_loaded is intentionally NOT reset here
     # Resetting it would let users bypass the limit by just clicking Clear
