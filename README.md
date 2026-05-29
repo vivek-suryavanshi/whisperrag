@@ -17,6 +17,7 @@ A voice RAG chatbot. Paste a webpage URL, ask a question by voice, get a spoken 
 - Scraping: requests + BeautifulSoup4
 - Database: Supabase (Postgres) — session and message logging
 - LLM Observability: Langfuse — cost, latency, and trace tracking
+- Evals: Langfuse LLM-as-judge — Faithfulness scoring on every conversation
 
 ## Setup
 
@@ -61,7 +62,7 @@ http://localhost:8000
 ```
 
 ## How to use
-1. Paste a webpage URL in the sidebar and click **Load page**
+1. Paste a webpage URL and click **Load page**
 2. Click the mic button, speak your question
 3. The AI answers based on that page and speaks the reply out loud
 4. Ask follow-up questions — conversation history is kept
